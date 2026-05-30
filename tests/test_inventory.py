@@ -4,7 +4,7 @@ Tests sorting, add-to-cart, and cart badge count.
 """
 
 import pytest
-from qa_portfolio.pages.inventory_page import InventoryPage
+from pages.inventory_page import InventoryPage
 
 
 class TestInventory:
