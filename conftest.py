@@ -44,7 +44,7 @@ def driver(request):
 @pytest.fixture(scope="function")
 def logged_in_driver(driver):
     """Driver already logged in as standard_user."""
-    from qa_portfolio.pages.login_page import LoginPage
+    from pages.login_page import LoginPage
     lp = LoginPage(driver)
     lp.open()
     lp.login("standard_user", "secret_sauce")

@@ -4,8 +4,8 @@ Tests end-to-end purchase flow and input validation.
 """
 
 import pytest
-from qa_portfolio.pages.inventory_page import InventoryPage
-from qa_portfolio.pages.cart_page import CartPage, CheckoutPage
+from pages.inventory_page import InventoryPage
+from pages.cart_page import CartPage, CheckoutPage
 
 
 class TestCheckout:
