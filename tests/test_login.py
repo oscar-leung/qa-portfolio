@@ -4,7 +4,7 @@ Tests positive login, negative login, and locked-out user flows.
 """
 
 import pytest
-from qa_portfolio.pages.login_page import LoginPage
+from pages.login_page import LoginPage
 
 
 class TestLogin:
@@ -51,7 +51,7 @@ class TestLogin:
 
     def test_logout_returns_to_login(self, logged_in_driver):
         """Logged-in user can log out and return to login page."""
-        from qa_portfolio.pages.inventory_page import InventoryPage
+        from pages.inventory_page import InventoryPage
         from selenium.webdriver.support import expected_conditions as EC
         from selenium.webdriver.support.ui import WebDriverWait
         inv = InventoryPage(logged_in_driver)
