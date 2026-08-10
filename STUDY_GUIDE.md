@@ -86,3 +86,28 @@ It contains real session data (cookies/localStorage). Even for a throwaway demo-
 ## 6. One honest note
 
 If an interviewer asks how you built this and you want to mention AI assistance — plenty of engineers now build portfolio projects this way, and it's not something to hide. What actually matters is that you can explain *why* each piece exists, not just that you typed it. Everything in this guide is the "why." If you can answer the questions in section 5 in your own words without reading off this page, you're ready.
+
+---
+
+## 7. The two stacks side by side (added after the walkthrough sessions)
+
+You now have the same site tested in two stacks. This table is the interview answer to "you know both — compare them":
+
+| Job | Selenium portfolio (`qa-portfolio`) | Playwright portfolio (this repo) |
+|---|---|---|
+| Language | Python | TypeScript |
+| Drives the browser | Selenium WebDriver | Playwright |
+| Finds/runs tests, `assert`s | **pytest** (separate tool, bolted on) | Playwright's own runner (built in) |
+| Waiting for elements | Explicit waits you write yourself | Automatic (auto-waiting) |
+| Fixtures/setup | pytest fixtures (`conftest.py`) | Playwright fixtures + projects |
+| API testing | Needs another library (`requests`) | Built-in `request` fixture |
+| Catches typos/broken renames | At runtime, when the test fails | At compile time (`tsc`), before running |
+
+**What is pytest?** Selenium only knows how to drive a browser — it has no opinion on what a "test" is. pytest is the test *framework* around it: it discovers files named `test_*.py`, runs each `test_` function, provides `assert` reporting, fixtures (reusable setup like "give me a logged-in driver"), and `parametrize` (run one test body with many data rows). In this Playwright repo, all of those jobs are done by Playwright's own runner — that's the "batteries included" difference.
+
+**How Playwright and TypeScript work in tandem:** Playwright is the hands (clicks, fills, HTTP calls); TypeScript is the spell-checker for your code *about* those hands. Every Playwright API is typed — `page.locator()` returns a `Locator`, `getItemPrices()` promises `number[]` — so if a page object method is renamed or its return shape changes, `tsc` flags every broken call site before a single browser opens. In the Python suite that same mistake only surfaces when the test crashes at runtime. Same relationship as Python+pytest = "engine + harness", TS+Playwright = "engine + harness + compile-time seatbelt."
+
+**Analogy bank (from the tutoring sessions — use if they help, drop if not):**
+- Cookies = notes the site asks the browser to keep ("logged in, session #123"); `storageState` = copying those notes to a file (the jar) so every test starts with cookies already in the jar.
+- The four projects = four workers: key-maker (setup), door inspector (login, deliberately given no key), shopper (authenticated, starts holding the key), phone caller (api, never visits the building).
+- CI = the robot that runs the whole suite on every push (Continuous Integration). CLI = the terminal where humans type commands. CI uses a CLI; they're not the same thing.
