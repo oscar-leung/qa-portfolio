@@ -111,3 +111,22 @@ You now have the same site tested in two stacks. This table is the interview ans
 - Cookies = notes the site asks the browser to keep ("logged in, session #123"); `storageState` = copying those notes to a file (the jar) so every test starts with cookies already in the jar.
 - The four projects = four workers: key-maker (setup), door inspector (login, deliberately given no key), shopper (authenticated, starts holding the key), phone caller (api, never visits the building).
 - CI = the robot that runs the whole suite on every push (Continuous Integration). CLI = the terminal where humans type commands. CI uses a CLI; they're not the same thing.
+
+---
+
+## 8. History: Selenium → Playwright (and your adaptation story)
+
+**Selenium, 2004** — Jason Huggins (ThoughtWorks) injects JS into pages to simulate users. 2006: Simon Stewart's **WebDriver** moves control outside the page via driver binaries (chromedriver etc.). Merged 2009; the protocol became a **W3C standard in 2018** — why Selenium owns the enterprise. Architecture: test → HTTP → driver → browser; every command a round trip; test framework (pytest/TestNG) bolted on.
+
+**Playwright, 2020** — built at Microsoft by the ex-Google team behind **Puppeteer** (2017, Chrome DevTools Protocol). Persistent WebSocket into the browser, no driver middleman → faster, deeper control (network interception, tracing). Playwright extended that to Firefox + WebKit, added **browser contexts** (instant fresh profiles — what makes storageState cheap), auto-waiting, and a built-in runner (2021).
+
+| | Selenium | Playwright |
+|---|---|---|
+| Born | 2004, ThoughtWorks | 2020, Microsoft (ex-Puppeteer team) |
+| Protocol | HTTP → driver binary (W3C std) | WebSocket direct (CDP-style) |
+| Waiting | Explicit, hand-written | Auto-waiting |
+| Runner | Bolted on | Built in |
+| Isolation | New browser session (slow) | Contexts (instant) |
+| 2026 standing | Enterprise incumbent | Most-cited in postings |
+
+**Your adaptation story (memorize the shape):** same suite, three stacks — Java+Selenium+TestNG (2021, CRM) → Python+Selenium+pytest (Illinois, qa-portfolio) → TypeScript+Playwright (this repo). POM, locator strategy, test independence, and CI thinking never changed; each hop swapped one layer (runner, type system, driver protocol). One-liner: *"I've built the same suite in three stacks — the design patterns never changed, so a new framework is a syntax problem, not a concepts problem."*
