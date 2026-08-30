@@ -34,28 +34,24 @@ class InventoryPage(BasePage):
             for el in self.driver.find_elements(*self.ITEM_PRICES)
         ]
 
-    def _item_button(self, item_name: str):
-        """The add/remove button for one product, re-queried each call.
-
-        The grid re-renders after every click, so a button handle cached
-        across an interaction goes stale.
-        """
-        for item in self.driver.find_elements(*self.INVENTORY_ITEMS):
-            if item.find_element(By.CLASS_NAME, "inventory_item_name").text == item_name:
-                return item.find_element(
-                    By.XPATH, ".//button[contains(@class,'btn_inventory')]"
-                )
-        raise ValueError(f"Item '{item_name}' not found on inventory page")
+    @staticmethod
+    def _slug(item_name: str) -> str:
+        """'Sauce Labs Bolt T-Shirt' -> 'sauce-labs-bolt-t-shirt'."""
+        return item_name.strip().lower().replace(" ", "-")
 
     def add_item_to_cart(self, item_name: str):
-        """Click 'Add to cart' for a product and wait until the add registers."""
+        """Add a product to the cart and wait until the add has registered.
+
+        Targets the app's own data-test hooks (add-to-cart-<slug> flips to
+        remove-<slug>) rather than scanning the grid and matching button
+        text. The grid re-renders on every click, so a text/DOM scan raced
+        the render and intermittently timed out.
+        """
         self.wait_until_loaded()
-        self._item_button(item_name).click()
-        # The button flips to "Remove" once React has processed the click.
-        # Waiting on that makes each add atomic: without it, a following
-        # click or navigation can land mid-render and the add is lost.
-        self.wait.until(
-            lambda _: self._item_button(item_name).text.strip().lower() == "remove"
+        slug = self._slug(item_name)
+        self.click_until(
+            (By.CSS_SELECTOR, f"[data-test='add-to-cart-{slug}']"),
+            (By.CSS_SELECTOR, f"[data-test='remove-{slug}']"),
         )
 
     def get_cart_count(self) -> int:
