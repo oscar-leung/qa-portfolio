@@ -6,6 +6,8 @@ Site under test: https://www.saucedemo.com
 (Built specifically for QA automation practice)
 """
 
+import os
+
 import pytest
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
@@ -18,6 +20,18 @@ def pytest_addoption(parser):
     )
 
 
+def _headless_requested(config):
+    """Headless if --headless is passed or HEADLESS is set truthy.
+
+    CI sets the HEADLESS env var rather than the flag, and a Linux runner
+    has no display: without this, Chrome starts headed and immediately
+    exits with SessionNotCreatedException.
+    """
+    if config.getoption("--headless"):
+        return True
+    return os.environ.get("HEADLESS", "").strip().lower() in {"1", "true", "yes", "on"}
+
+
 @pytest.fixture(scope="function")
 def driver(request):
     """Provide a configured Chrome WebDriver, quit after each test."""
@@ -25,7 +39,7 @@ def driver(request):
     opts.add_argument("--disable-blink-features=AutomationControlled")
     opts.add_experimental_option("excludeSwitches", ["enable-automation"])
     opts.add_experimental_option("useAutomationExtension", False)
-    if request.config.getoption("--headless"):
+    if _headless_requested(request.config):
         opts.add_argument("--headless=new")
         opts.add_argument("--no-sandbox")
         opts.add_argument("--disable-dev-shm-usage")
