@@ -1,5 +1,6 @@
 """Base page — shared driver helpers used by all page objects."""
 
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
@@ -24,10 +25,53 @@ class BasePage:
         el.click()
         return el
 
-    def type_text(self, by, value, text):
-        el = self.find(by, value)
-        el.clear()
-        el.send_keys(text)
+    def click_until(self, click_locator, expect_locator, attempts=3, per_attempt=None):
+        """Click, then wait for the expected element; retry a swallowed click.
+
+        This app re-renders on interaction and will occasionally drop a click
+        entirely — the call returns cleanly and nothing happened. Retrying
+        against an observable outcome is what makes these steps reliable
+        instead of intermittently timing out.
+        """
+        per_attempt = per_attempt or self.DEFAULT_TIMEOUT
+        last_error = None
+        for attempt in range(attempts):
+            # Never re-submit something that already took effect: a second
+            # click on a completed checkout would be a new interaction, not
+            # a retry.
+            if attempt and self.driver.find_elements(*expect_locator):
+                return self.driver.find_element(*expect_locator)
+            try:
+                self.click(*click_locator)
+            except TimeoutException as exc:
+                # Already navigated away: the click landed, just verify below.
+                last_error = exc
+            try:
+                return WebDriverWait(self.driver, per_attempt).until(
+                    EC.presence_of_element_located(expect_locator)
+                )
+            except TimeoutException as exc:
+                last_error = exc
+        raise last_error
+
+    def type_text(self, by, value, text, attempts=3):
+        """Type into a field and confirm the value actually landed.
+
+        These are React-controlled inputs: a clear()/send_keys() pair can be
+        swallowed by a re-render, leaving the field empty while the call
+        still appears to succeed. Verify and retry rather than trusting it.
+        """
+        for attempt in range(attempts):
+            el = self.find(by, value)
+            el.clear()
+            if text:
+                el.send_keys(text)
+            if self.find(by, value).get_attribute("value") == text:
+                return
+        raise AssertionError(
+            f"Could not set {by}={value!r} to {text!r} after {attempts} attempts; "
+            f"field still reads {self.find(by, value).get_attribute('value')!r}"
+        )
 
     def get_text(self, by, value) -> str:
         return self.find(by, value).text.strip()

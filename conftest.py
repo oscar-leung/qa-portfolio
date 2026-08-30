@@ -50,7 +50,11 @@ def driver(request):
         {"source": "Object.defineProperty(navigator,'webdriver',{get:()=>undefined})"},
     )
     d.set_window_size(1440, 900)
-    d.implicitly_wait(5)
+    # No implicit wait on purpose. Mixing it with WebDriverWait makes every
+    # negative lookup inside an explicit wait block for the implicit timeout,
+    # so a single poll can consume the whole explicit budget and raise
+    # TimeoutException on a page that is actually fine. Page objects gate on
+    # explicit waits instead.
     yield d
     d.quit()
 

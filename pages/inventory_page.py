@@ -34,17 +34,29 @@ class InventoryPage(BasePage):
             for el in self.driver.find_elements(*self.ITEM_PRICES)
         ]
 
-    def add_item_to_cart(self, item_name: str):
-        """Click 'Add to cart' for a specific product by name."""
-        self.wait_until_loaded()
-        items = self.driver.find_elements(*self.INVENTORY_ITEMS)
-        for item in items:
-            name_el = item.find_element(By.CLASS_NAME, "inventory_item_name")
-            if name_el.text == item_name:
-                btn = item.find_element(By.XPATH, ".//button[contains(@class,'btn_inventory')]")
-                btn.click()
-                return
+    def _item_button(self, item_name: str):
+        """The add/remove button for one product, re-queried each call.
+
+        The grid re-renders after every click, so a button handle cached
+        across an interaction goes stale.
+        """
+        for item in self.driver.find_elements(*self.INVENTORY_ITEMS):
+            if item.find_element(By.CLASS_NAME, "inventory_item_name").text == item_name:
+                return item.find_element(
+                    By.XPATH, ".//button[contains(@class,'btn_inventory')]"
+                )
         raise ValueError(f"Item '{item_name}' not found on inventory page")
+
+    def add_item_to_cart(self, item_name: str):
+        """Click 'Add to cart' for a product and wait until the add registers."""
+        self.wait_until_loaded()
+        self._item_button(item_name).click()
+        # The button flips to "Remove" once React has processed the click.
+        # Waiting on that makes each add atomic: without it, a following
+        # click or navigation can land mid-render and the add is lost.
+        self.wait.until(
+            lambda _: self._item_button(item_name).text.strip().lower() == "remove"
+        )
 
     def get_cart_count(self) -> int:
         if not self.is_visible(*self.CART_BADGE):
@@ -56,7 +68,8 @@ class InventoryPage(BasePage):
         Select(self.find(*self.SORT_DROPDOWN)).select_by_value(option)
 
     def go_to_cart(self):
-        self.click(*self.CART_ICON)
+        """Open the cart and wait for it to render."""
+        self.click_until(self.CART_ICON, (By.ID, "cart_contents_container"))
 
     def logout(self):
         import time
