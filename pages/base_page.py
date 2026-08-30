@@ -1,5 +1,7 @@
 """Base page — shared driver helpers used by all page objects."""
 
+import os
+
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
@@ -8,7 +10,12 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 class BasePage:
     BASE_URL = "https://www.saucedemo.com"
-    DEFAULT_TIMEOUT = 10
+    # The app under test is a live third-party site, so page loads are only
+    # as fast as the network. A CI runner is materially slower than a laptop
+    # (the same suite takes ~35s locally and ~150s on GitHub Actions), and
+    # every navigation-heavy test was timing out there while single-page
+    # tests passed. Let the environment raise the ceiling.
+    DEFAULT_TIMEOUT = int(os.environ.get("SELENIUM_TIMEOUT", "10"))
 
     def __init__(self, driver):
         self.driver = driver
