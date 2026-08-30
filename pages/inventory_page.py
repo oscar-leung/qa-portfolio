@@ -18,6 +18,12 @@ class InventoryPage(BasePage):
 
     def open(self):
         super().open("/inventory.html")
+        self.wait_until_loaded()
+
+    def wait_until_loaded(self):
+        """Block until the product grid is present."""
+        self.find(*self.INVENTORY_CONTAINER)
+        return self
 
     def get_item_names(self) -> list[str]:
         return [el.text for el in self.driver.find_elements(*self.ITEM_NAMES)]
@@ -30,6 +36,7 @@ class InventoryPage(BasePage):
 
     def add_item_to_cart(self, item_name: str):
         """Click 'Add to cart' for a specific product by name."""
+        self.wait_until_loaded()
         items = self.driver.find_elements(*self.INVENTORY_ITEMS)
         for item in items:
             name_el = item.find_element(By.CLASS_NAME, "inventory_item_name")

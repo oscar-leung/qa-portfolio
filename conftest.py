@@ -57,9 +57,14 @@ def driver(request):
 
 @pytest.fixture(scope="function")
 def logged_in_driver(driver):
-    """Driver already logged in as standard_user."""
+    """Driver already logged in as standard_user, on a ready inventory page."""
+    from pages.inventory_page import InventoryPage
     from pages.login_page import LoginPage
     lp = LoginPage(driver)
     lp.open()
     lp.login("standard_user", "secret_sauce")
+    # login() only clicks; it does not wait for the redirect. Hand back a
+    # driver that is actually on a rendered inventory page, so tests do not
+    # race the navigation on a cold/slow runner.
+    InventoryPage(driver).wait_until_loaded()
     yield driver
