@@ -122,6 +122,23 @@ Tests run automatically on every push and pull request via GitHub Actions:
 
 [![Tests](https://github.com/oscar-leung/qa-portfolio/actions/workflows/tests.yml/badge.svg)](https://github.com/oscar-leung/qa-portfolio/actions/workflows/tests.yml)
 
+### Timeouts and reruns
+
+The system under test is a live third-party site, so the suite is only as
+fast as the network to it — the same run takes ~35s locally and 3–5 min on
+a GitHub runner. Two CI-only concessions follow from that, and neither is
+used locally:
+
+- `SELENIUM_TIMEOUT=30` raises the explicit-wait ceiling (default `10`).
+- `--reruns 2` retries a failed test twice.
+
+These cover latency to an external dependency, **not** flaky application
+logic. Synchronization is handled properly in the page objects: every
+interaction that changes state waits on an observable outcome
+(`click_until`), typed input is verified (`type_text`), and there is no
+implicit wait to collide with the explicit ones. A test that fails all
+three attempts is a real failure.
+
 ---
 
 ## 📦 Dependencies
