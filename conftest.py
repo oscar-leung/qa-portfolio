@@ -12,6 +12,8 @@ import pytest
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
+from pages.base_page import BasePage
+
 
 def pytest_addoption(parser):
     parser.addoption(
@@ -30,6 +32,24 @@ def _headless_requested(config):
     if config.getoption("--headless"):
         return True
     return os.environ.get("HEADLESS", "").strip().lower() in {"1", "true", "yes", "on"}
+
+
+@pytest.fixture(scope="session", autouse=True)
+def _warm_up_site():
+    """Prime DNS/TLS/CDN for the site under test before any test runs.
+
+    test_checkout.py sorts first, so its four navigation-heavy tests were
+    the ones hitting a completely cold GitHub runner — unresolved DNS, no
+    TLS session, nothing cached — and they were the only tests failing in
+    CI while the 13 single-page tests passed. One cheap request up front
+    moves that cost out of the first test.
+    """
+    import urllib.request
+    for url in (f"{BasePage.BASE_URL}/", f"{BasePage.BASE_URL}/inventory.html"):
+        try:
+            urllib.request.urlopen(url, timeout=30).read(2048)
+        except Exception:
+            pass  # Warm-up is best-effort; never fail the suite on it.
 
 
 @pytest.fixture(scope="function")

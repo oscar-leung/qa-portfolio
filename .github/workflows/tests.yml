@@ -32,7 +32,7 @@ jobs:
       - name: Run tests (headless)
         run: |
           pytest \
-            --reruns 2 --reruns-delay 5 \
+            --reruns 1 --reruns-delay 5 \
             --html=report.html \
             --self-contained-html \
             -v \
@@ -40,7 +40,7 @@ jobs:
             -p no:warnings
         env:
           HEADLESS: "true"
-          SELENIUM_TIMEOUT: "30"
+          SELENIUM_TIMEOUT: "45"
 
       - name: Upload HTML report
         uses: actions/upload-artifact@v4
