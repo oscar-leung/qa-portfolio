@@ -33,28 +33,41 @@ class BasePage:
         return el
 
     def click_until(self, click_locator, expect_locator, attempts=3, per_attempt=None):
-        """Click, then wait for the expected element; retry a swallowed click.
+        """Click, then wait for the expected element; escalate if it was dropped.
 
-        This app re-renders on interaction and will occasionally drop a click
-        entirely — the call returns cleanly and nothing happened. Retrying
-        against an observable outcome is what makes these steps reliable
-        instead of intermittently timing out.
+        Headless Chrome silently swallows some native clicks: the element is
+        found, enabled, visible and unobscured, .click() raises nothing, and
+        the page simply does not navigate. CI artifacts showed exactly this —
+        a fully rendered cart page with the Checkout button plainly visible,
+        still sitting there after the click. logout() already worked around
+        the same thing with a JS click.
+
+        So: try a real click first, because that is what a user does and it
+        works everywhere except headless. If the expected outcome does not
+        appear, escalate to a JS click, which dispatches the handler directly.
+
+        The first attempt waits briefly rather than the full timeout — when a
+        click is dropped it is dropped immediately, and burning 45s before
+        escalating is what turned CI runs into 20-minute jobs.
         """
         per_attempt = per_attempt or self.DEFAULT_TIMEOUT
         last_error = None
         for attempt in range(attempts):
-            # Never re-submit something that already took effect: a second
-            # click on a completed checkout would be a new interaction, not
-            # a retry.
+            # Never re-fire something that already took effect.
             if attempt and self.driver.find_elements(*expect_locator):
                 return self.driver.find_element(*expect_locator)
             try:
-                self.click(*click_locator)
+                el = self.wait.until(EC.element_to_be_clickable(click_locator))
+                if attempt == 0:
+                    el.click()
+                else:
+                    self.driver.execute_script("arguments[0].click();", el)
             except TimeoutException as exc:
-                # Already navigated away: the click landed, just verify below.
+                # Already navigated away: the click landed; verify below.
                 last_error = exc
+            timeout = min(8, per_attempt) if attempt == 0 else per_attempt
             try:
-                return WebDriverWait(self.driver, per_attempt).until(
+                return WebDriverWait(self.driver, timeout).until(
                     EC.presence_of_element_located(expect_locator)
                 )
             except TimeoutException as exc:
