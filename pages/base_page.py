@@ -74,18 +74,37 @@ class BasePage:
                 last_error = exc
         raise last_error
 
+    # Setting .value directly does not update a React controlled input — React
+    # tracks its own value on the node. Go through the native setter and fire a
+    # bubbling input event so React's onChange actually runs.
+    _REACT_SET_VALUE = """
+        var el = arguments[0], v = arguments[1];
+        var setter = Object.getOwnPropertyDescriptor(
+            window.HTMLInputElement.prototype, 'value').set;
+        setter.call(el, v);
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+    """
+
     def type_text(self, by, value, text, attempts=3):
         """Type into a field and confirm the value actually landed.
 
-        These are React-controlled inputs: a clear()/send_keys() pair can be
-        swallowed by a re-render, leaving the field empty while the call
-        still appears to succeed. Verify and retry rather than trusting it.
+        Same failure mode as the dropped clicks: headless Chrome will accept a
+        clear()/send_keys() pair, raise nothing, and leave the field empty.
+        CI caught it as "Could not set id='first-name' to 'Oscar'".
+
+        Real keystrokes first, because that is what a user does and it exercises
+        the app's own input handling. If the value does not stick, escalate to
+        setting it through React's native setter.
         """
         for attempt in range(attempts):
             el = self.find(by, value)
-            el.clear()
-            if text:
-                el.send_keys(text)
+            if attempt == 0:
+                el.clear()
+                if text:
+                    el.send_keys(text)
+            else:
+                self.driver.execute_script(self._REACT_SET_VALUE, el, text)
             if self.find(by, value).get_attribute("value") == text:
                 return
         raise AssertionError(
