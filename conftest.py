@@ -7,6 +7,8 @@ Site under test: https://www.saucedemo.com
 """
 
 import os
+import pathlib
+import re
 
 import pytest
 from selenium import webdriver
@@ -92,3 +94,30 @@ def logged_in_driver(driver):
     # race the navigation on a cold/slow runner.
     InventoryPage(driver).wait_until_loaded()
     yield driver
+
+
+@pytest.hookimpl(hookwrapper=True, tryfirst=True)
+def pytest_runtest_makereport(item, call):
+    """On failure, dump what the browser was actually looking at.
+
+    These four checkout tests pass 100% locally and fail only on CI, so
+    guessing at the cause from a bare TimeoutException has not converged.
+    Capture the URL, a screenshot, and the page source so the CI artifact
+    shows the real state instead of another stack trace.
+    """
+    outcome = yield
+    report = outcome.get_result()
+    if report.when != "call" or not report.failed:
+        return
+    driver = item.funcargs.get("logged_in_driver") or item.funcargs.get("driver")
+    if driver is None:
+        return
+    out = pathlib.Path("failure-artifacts")
+    out.mkdir(exist_ok=True)
+    name = re.sub(r"[^A-Za-z0-9_.-]", "_", item.name)
+    try:
+        (out / f"{name}.url.txt").write_text(driver.current_url)
+        driver.save_screenshot(str(out / f"{name}.png"))
+        (out / f"{name}.html").write_text(driver.page_source)
+    except Exception as exc:  # never let diagnostics mask the real failure
+        (out / f"{name}.error.txt").write_text(f"could not capture: {exc!r}")
