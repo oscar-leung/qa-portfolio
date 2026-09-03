@@ -122,22 +122,43 @@ Tests run automatically on every push and pull request via GitHub Actions:
 
 [![Tests](https://github.com/oscar-leung/qa-portfolio/actions/workflows/tests.yml/badge.svg)](https://github.com/oscar-leung/qa-portfolio/actions/workflows/tests.yml)
 
-### Timeouts and reruns
+### Headless-only failures, and how they were found
 
-The system under test is a live third-party site, so the suite is only as
-fast as the network to it — the same run takes ~35s locally and 3–5 min on
-a GitHub runner. Two CI-only concessions follow from that, and neither is
-used locally:
+The four checkout tests passed on a laptop and failed only in CI. Three
+attempts to fix that by tuning timeouts, adding retries, and warming the site
+all failed, because the premise was wrong: nothing was slow.
 
-- `SELENIUM_TIMEOUT=30` raises the explicit-wait ceiling (default `10`).
-- `--reruns 2` retries a failed test twice.
+Adding failure artifacts (`conftest.py` dumps the URL, a screenshot, and the
+page source on failure; CI uploads them) settled it in one run. The artifacts
+showed a fully rendered cart page, Checkout button visible and unobscured,
+`.click()` having raised nothing, and the page simply not navigated.
 
-These cover latency to an external dependency, **not** flaky application
-logic. Synchronization is handled properly in the page objects: every
-interaction that changes state waits on an observable outcome
-(`click_until`), typed input is verified (`type_text`), and there is no
-implicit wait to collide with the explicit ones. A test that fails all
-three attempts is a real failure.
+**Headless Chrome silently drops some native clicks and keystrokes** on this
+app — the call succeeds and nothing happens. `pages/inventory_page.py` already
+documented the click half in `logout()`.
+
+Both interactions now try the real user action first and escalate only if the
+expected outcome does not appear:
+
+- `click_until` falls back to a JS click.
+- `type_text` falls back to React's native value setter plus a bubbling `input`
+  event. Assigning `.value` alone is not enough — React tracks its own value on
+  the node and ignores it, which would leave the field looking filled while the
+  form still refused to submit.
+
+Native-first ordering is deliberate. JS-clicking everything would be more
+reliable and would test less.
+
+Result: **17/17 in CI with no reruns consumed, 2m26s** — down from 23m51s, since
+a dropped interaction is dropped instantly and no longer burns the full timeout
+before escalating.
+
+### CI timeouts and reruns
+
+The system under test is a live third-party site, so the suite is only as fast
+as the network to it. `SELENIUM_TIMEOUT=45` and `--reruns 1` are CI-only
+concessions for that latency; neither is used locally, and neither is what makes
+the suite pass.
 
 ---
 
