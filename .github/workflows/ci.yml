@@ -1,0 +1,81 @@
+name: CI
+
+# Fast feedback on every push and PR: both suites, Chromium only, reports as
+# build artifacts. The nightly workflow is the one that publishes to Pages.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  selenium:
+    name: Selenium + pytest
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: selenium
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: selenium/requirements.txt
+      - run: pip install -r requirements.txt
+      - uses: browser-actions/setup-chrome@v1
+      - name: Run pytest (headless)
+        run: |
+          pytest --reruns 1 --reruns-delay 5 \
+            --html=report.html --self-contained-html \
+            -v --tb=short -p no:warnings
+        env:
+          HEADLESS: "true"
+          SELENIUM_TIMEOUT: "45"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: selenium-report
+          path: selenium/report.html
+          retention-days: 14
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: selenium-failure-artifacts
+          path: selenium/failure-artifacts/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  playwright:
+    name: Playwright + TypeScript
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: playwright
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: npm
+          cache-dependency-path: playwright/package-lock.json
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Run Playwright tests
+        run: npx playwright test --project=setup --project=login --project=authenticated --project=api
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright/playwright-report/
+          retention-days: 14

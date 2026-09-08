@@ -1,13 +1,22 @@
-# Virtualenvs
+# Python (selenium/)
 .venv/
 venv/
-
-# Python bytecode
 __pycache__/
 *.py[cod]
-
-# pytest-html output
-report.html
-assets/
 .pytest_cache/
-failure-artifacts/
+selenium/report.html
+selenium/assets/
+selenium/failure-artifacts/
+
+# Node (playwright/)
+playwright/node_modules/
+playwright/test-results/
+playwright/playwright-report/
+playwright/blob-report/
+playwright/playwright/.auth/
+*.tsbuildinfo
+
+# Nightly site build
+site/
+
+.DS_Store
