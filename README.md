@@ -37,6 +37,7 @@ Things that went wrong and what fixing them taught. Each one links to the code.
 
 - **CI** (`.github/workflows/ci.yml`): both suites on every push and pull request, Chromium only, reports as build artifacts.
 - **Nightly** (`.github/workflows/nightly.yml`): both suites at 06:00 UTC, then the two HTML reports and an index page are published to GitHub Pages. A red night publishes a red report; a stale green one would be worse.
+- **One-time setup** for the nightly publish: repo Settings, Pages, Build and deployment, Source: GitHub Actions. The workflow token can read a Pages site but cannot create one.
 - The system under test is a live third-party site, so CI runs use one retry and a longer Selenium timeout. Neither is used locally, and neither is what makes the suites pass.
 
 ## Run locally

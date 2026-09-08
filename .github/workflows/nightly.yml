@@ -104,9 +104,19 @@ jobs:
           PLAYWRIGHT_RESULT: ${{ needs.playwright.result }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: bash .github/scripts/build-report-index.sh site
+      # The workflow token can read a Pages site but cannot create one, so
+      # the first run fails here until Pages is switched on once by hand:
+      # repo Settings -> Pages -> Build and deployment -> Source: GitHub Actions.
       - uses: actions/configure-pages@v5
+        id: pages
+        continue-on-error: true
         with:
           enablement: true
+      - name: Explain a Pages setup failure
+        if: steps.pages.outcome == 'failure'
+        run: |
+          echo "::error title=GitHub Pages is not enabled::One-time setup needed. In this repo open Settings -> Pages -> Build and deployment and set Source to 'GitHub Actions'. Then re-run this workflow. The test suites above already ran; only the publish step is blocked."
+          exit 1
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
