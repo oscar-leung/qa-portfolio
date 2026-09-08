@@ -67,7 +67,7 @@ It contains real session data (cookies/localStorage). Even for a throwaway demo-
 | `tests/ui/known-bug.spec.ts` | The documented `problem_user` image defect |
 | `tests/api/posts.spec.ts` | API CRUD tests, no browser |
 | `pages/*.ts` | Page Object classes — one per page/flow |
-| `.github/workflows/playwright.yml` | CI: installs deps, runs tests, uploads the HTML report |
+| `../.github/workflows/ci.yml` and `nightly.yml` | CI: installs deps, runs tests, uploads / publishes the HTML report |
 
 ---
 

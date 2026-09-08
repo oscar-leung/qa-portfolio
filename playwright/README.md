@@ -2,7 +2,9 @@
 
 End-to-end and API test automation suite built with [Playwright](https://playwright.dev) and TypeScript, using the Page Object Model. Runs against [Sauce Demo](https://www.saucedemo.com) (UI) and [jsonplaceholder.typicode.com](https://jsonplaceholder.typicode.com) (API) — both free, publicly available services intended for test automation practice.
 
-![Playwright Tests](https://github.com/oscar-leung/qa-portfolio/actions/workflows/playwright.yml/badge.svg)
+[![CI](https://github.com/oscar-leung/qa-portfolio/actions/workflows/ci.yml/badge.svg)](https://github.com/oscar-leung/qa-portfolio/actions/workflows/ci.yml)
+
+Part of [oscar-leung/qa-portfolio](../README.md); the sibling Selenium + pytest suite lives in [`../selenium/`](../selenium/).
 
 ## What's covered
 
@@ -39,4 +41,4 @@ npx playwright test --project=login
 
 ## CI
 
-Every push/PR to `main` runs the `setup`, `login`, `authenticated`, and `api` projects on Chromium via GitHub Actions (`.github/workflows/playwright.yml`) and uploads the HTML report as a build artifact. Firefox is configured and verified locally but not run on every push, to keep CI fast — see the workflow file for the exact command to add it.
+Every push and PR runs the `setup`, `login`, `authenticated`, and `api` projects on Chromium via the repo-level workflow (`../.github/workflows/ci.yml`) and uploads the HTML report as an artifact. The nightly workflow (`../.github/workflows/nightly.yml`) runs the same projects and publishes the report to [oscar-leung.github.io/qa-portfolio](https://oscar-leung.github.io/qa-portfolio/). Firefox is configured and verified locally but not run in CI, to keep runs fast.
