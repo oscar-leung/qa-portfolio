@@ -12,9 +12,7 @@ on:
     - cron: '0 6 * * *'   # 06:00 UTC, 23:00 Pacific the evening before
 
 permissions:
-  contents: read
-  pages: write
-  id-token: write
+  contents: write
 
 concurrency:
   group: nightly-pages
@@ -79,13 +77,10 @@ jobs:
           retention-days: 30
 
   publish:
-    name: Publish reports to Pages
+    name: Publish reports to gh-pages
     needs: [selenium, playwright]
     if: always()
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -104,11 +99,18 @@ jobs:
           PLAYWRIGHT_RESULT: ${{ needs.playwright.result }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
         run: bash .github/scripts/build-report-index.sh site
-      - uses: actions/configure-pages@v5
+      # Publishes by pushing the built site to the gh-pages branch. This only
+      # needs contents:write, which the workflow token has, so it does not
+      # depend on the Pages API being able to create a site. GitHub serves the
+      # branch at https://oscar-leung.github.io/qa-portfolio/ once the Pages
+      # source is "Deploy from a branch: gh-pages / (root)".
+      - name: Push site to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          enablement: true
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: site
-      - id: deploy
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
+          force_orphan: true
+          commit_message: "Nightly reports from run ${{ github.run_id }}"
+      - name: Where to look
+        run: |
+          echo "::notice title=Reports pushed to gh-pages::If https://oscar-leung.github.io/qa-portfolio/ is not live within a few minutes, open Settings -> Pages and set Source to 'Deploy from a branch', branch gh-pages, folder / (root), then Save."

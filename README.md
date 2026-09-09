@@ -36,7 +36,8 @@ Things that went wrong and what fixing them taught. Each one links to the code.
 ## How it runs
 
 - **CI** (`.github/workflows/ci.yml`): both suites on every push and pull request, Chromium only, reports as build artifacts.
-- **Nightly** (`.github/workflows/nightly.yml`): both suites at 06:00 UTC, then the two HTML reports and an index page are published to GitHub Pages. A red night publishes a red report; a stale green one would be worse.
+- **Nightly** (`.github/workflows/nightly.yml`): both suites at 06:00 UTC, then the two HTML reports and a generated index page are pushed to the `gh-pages` branch, which GitHub Pages serves. A red night publishes a red report; a stale green one would be worse.
+- **One-time setup**: Settings, Pages, Build and deployment, Source: Deploy from a branch, branch `gh-pages`, folder `/ (root)`, Save. The branch exists after the first nightly run.
 - The system under test is a live third-party site, so CI runs use one retry and a longer Selenium timeout. Neither is used locally, and neither is what makes the suites pass.
 
 ## Run locally
