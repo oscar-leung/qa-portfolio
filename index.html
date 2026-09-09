@@ -1,0 +1,22 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QA Portfolio nightly reports</title>
+<style>
+  :root { color-scheme: light dark; font-family: system-ui, sans-serif; }
+  body { max-width: 720px; margin: 3rem auto; padding: 0 1rem; line-height: 1.5; }
+  h1 { font-size: 1.6rem; margin-bottom: .25rem; }
+  .sub { opacity: .7; margin-top: 0; }
+  table { width: 100%; border-collapse: collapse; margin-top: 1.5rem; }
+  td, th { text-align: left; padding: .6rem .4rem; border-bottom: 1px solid #8884; }
+  .ok { color: #1a7f37; font-weight: 600; } .bad { color: #cf222e; font-weight: 600; } .meh { opacity: .7; }
+  footer { margin-top: 2rem; font-size: .9rem; opacity: .7; }
+</style>
+<h1>QA Portfolio: nightly run</h1>
+<p class="sub">Oscar Leung &middot; last run 2026-09-09 16:33 UTC &middot; <a href="https://github.com/oscar-leung/qa-portfolio/actions/runs/34377218633">workflow log</a></p>
+<table>
+  <tr><th>Suite</th><th>Stack</th><th>Result</th><th>Report</th></tr>
+  <tr><td>End-to-end, SauceDemo</td><td>Selenium 4 + pytest</td><td><span class="ok">passing</span></td><td><a href="selenium/report.html">open report</a></td></tr>
+  <tr><td>End-to-end + API, SauceDemo and JSONPlaceholder</td><td>Playwright + TypeScript</td><td><span class="ok">passing</span></td><td><a href="playwright/index.html">open report</a></td></tr>
+</table>
+<footer>Source and case studies: <a href="https://github.com/oscar-leung/qa-portfolio">github.com/oscar-leung/qa-portfolio</a></footer>
